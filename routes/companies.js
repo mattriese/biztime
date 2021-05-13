@@ -1,3 +1,5 @@
+"use strict";
+
 /** Routes for sample app. */
 
 const express = require("express");
@@ -12,27 +14,36 @@ const { NotFoundError } = require("../expressError");
 router.get("/", async function (req, res) {
 	const result = await db.query(
 		`SELECT code, name FROM companies`
-	)
+	);
 	return res.json({ companies: result.rows });
-})
+});
 
 /** Looks up information about one company
 Return obj of company: {company: {code, name, description}}. Returns a 404
 if not found. */
 router.get("/:code", async function (req, res) {
 	const code = req.params.code;
-	const result = await db.query(
+	const companyResult = await db.query(
 		`SELECT code, name, description
 		FROM companies
 		WHERE code = $1`,
 		[code]
-	)
-	const company = result.rows[0];
+	);
+	const company = companyResult.rows[0];
 	if (!company) {
 		throw new NotFoundError();
-	}
+	};
+	const invoiceResult = await db.query(
+		`SELECT id
+		FROM invoices
+		WHERE comp_code = $1`,
+		[code]
+	);
+	const invoices = invoiceResult.rows.map(r => r.id);
+	company.invoices = invoices;
+
 	return res.json({ company });
-})
+});
 
 /** Creates a new company
 Needs to be given JSON like: {code, name, description}
@@ -48,7 +59,7 @@ router.post("/", async function (req, res) {
 	const company = result.rows[0];
 
 	return res.status(201).json({ company });
-})
+});
 
 
 /** Edit exisiting company
@@ -70,7 +81,8 @@ router.put("/:code", async function (req, res) {
 
 	if (!company) {
 		throw new NotFoundError();
-	}
+	};
+	
 	return res.json({ company });
 });
 
@@ -90,7 +102,6 @@ router.delete("/:code", async function (req, res) {
 	if (!company) throw new NotFoundError();
 
 	return res.json({ message: "deleted" });
-})
-
+});
 
 module.exports = router;
