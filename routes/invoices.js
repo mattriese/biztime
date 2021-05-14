@@ -2,7 +2,7 @@
 
 /** Routes for sample app. */
 
-const { Router } = require("express");
+// const { Router } = require("express");  MAGICALLY ADDED LINE??????
 const express = require("express");
 // const { delete } = require("../app");   MAGICALLY ADDED LINE??????
 
@@ -14,7 +14,7 @@ const { NotFoundError } = require("../expressError");
 /** Return info on all invoices: like {invoices: [{id, comp_code}, ...]} */
 router.get("/", async function (req, res) {
 	const result = await db.query(
-		`SELECT id, comp_code FROM invoices`
+		`SELECT id, comp_code FROM invoices ORDER BY id`
 	);
 	return res.json({ invoices: result.rows });
 });
@@ -44,7 +44,7 @@ router.get("/:id", async function (req, res) {
 	);
 	const company = companyResult.rows[0];
 	delete invoice.comp_code;
-	invoice["company"] = company;
+	invoice.company = company;
 
 	return res.json({ invoice });
 });
@@ -56,11 +56,12 @@ router.get("/:id", async function (req, res) {
  Returns: {invoice: {id, comp_code, amt, paid, add_date, paid_date}}
  */
 router.post("/", async function (req, res) {
+	const {comp_code, amt} = req.body;
 	const result = await db.query(
 		`INSERT INTO invoices (comp_code, amt)
 		VALUES ($1, $2)
 		RETURNING id, comp_code, amt, paid, add_date, paid_date`,
-		[req.body.comp_code, req.body.amt]);
+		[comp_code, amt]);
 
 	const invoice = result.rows[0];
 
@@ -82,6 +83,9 @@ router.put("/:id", async function (req, res) {
 		[amt, id]
 	);
 	const invoice = result.rows[0];
+	if (!invoice) {
+		throw new NotFoundError();
+	};
 	return res.json({ invoice });
 });
 

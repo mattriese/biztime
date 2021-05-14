@@ -1,3 +1,5 @@
+"use strict";
+
 /** BizTime express application. */
 
 const express = require("express");
@@ -9,8 +11,8 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/companies", companyRoutes)
-app.use("/invoices", invoiceRoutes)
+app.use("/companies", companyRoutes);
+app.use("/invoices", invoiceRoutes);
 
 /** 404 handler: matches unmatched routes; raises NotFoundError. */
 app.use(function (req, res, next) {
